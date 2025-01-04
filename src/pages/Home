@@ -1,0 +1,13 @@
+import React from 'react';
+import './Home.css';
+
+const Home = () => (
+  <div>
+    <div className="banner">Welcome to My Website!</div>
+    <div className="content">
+      <p>This is the home page. Explore the tabs to learn more!</p>
+    </div>
+  </div>
+);
+
+export default Home;
