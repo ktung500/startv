@@ -1,17 +1,41 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import './Details.css';
-
 const Details = () => {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { property } = location.state || {};
+  const [listing, setListing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!property) {
+  useEffect(() => {
+    const fetchListing = async () => {
+      try {
+        console.log("id: " + id)
+        const response = await fetch(`http://localhost:5000/api/listing/${id}`);
+        if (!response.ok) {
+          throw new Error('Listing not found');
+        }
+        const data = await response.json();
+        setListing(data);
+        console.log(JSON.stringify(data))
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [id]);
+
+  if (loading) return <div className="loading">Loading...</div>;
+  
+  if (error || !listing) {
     return (
       <div className="details-container">
         <div className="error-message">
-          Property not found
+          {error || 'Listing not found'}
           <button onClick={() => navigate('/')}>Back to Home</button>
         </div>
       </div>
@@ -24,54 +48,49 @@ const Details = () => {
         ← Back to Listings
       </button>
       
-      <div className="property-details-card">
+      <div className="listing-details-card">
         <img 
-          src={property.image} 
-          alt={property.title} 
-          className="property-detail-image"
+          src={listing.image || 'https://placehold.co/300x200'} 
+          alt={listing.name} 
+          className="listing-detail-image"
         />
         
-        <div className="property-info">
-          <h1>{property.title}</h1>
+        <div className="listing-info">
+          <h1>{listing.name}</h1>
           <div className="price-location">
-            <h2 className="price">{property.price}</h2>
-            <p className="location">{property.location}</p>
+            <h2 className="price">{listing.price}</h2>
+            <p className="location">{listing.address}</p>
           </div>
 
-          <div className="property-stats">
+          <div className="listing-stats">
             <div className="stat">
-              <span className="label">Bedrooms</span>
-              <span className="value">{property.bedrooms}</span>
+              <span className="label">Owner</span>
+              <span className="value">{listing.owner}</span>
             </div>
-            <div className="stat">
-              <span className="label">Bathrooms</span>
-              <span className="value">{property.bathrooms}</span>
-            </div>
-            <div className="stat">
-              <span className="label">Area</span>
-              <span className="value">{property.area}</span>
-            </div>
+            {/* Add more stats as needed based on your database schema */}
           </div>
 
           <div className="description">
             <h3>Description</h3>
-            <p>{property.description}</p>
+            <p>{listing.description || 'No description available.'}</p>
           </div>
 
-          <div className="amenities">
-            <h3>Amenities</h3>
-            <div className="amenities-list">
-              {property.amenities.map((amenity, index) => (
-                <span key={index} className="amenity-tag">
-                  {amenity}
-                </span>
-              ))}
+          {/* Only show amenities if they exist in your data */}
+          {listing.amenities && (
+            <div className="amenities">
+              <h3>Amenities</h3>
+              <div className="amenities-list">
+                {listing.amenities.map((amenity, index) => (
+                  <span key={index} className="amenity-tag">
+                    {amenity}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
-
 export default Details;

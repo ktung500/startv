@@ -11,106 +11,152 @@
 }
   
 .home-container {
-    padding: 20px;
-    max-width: 1600px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 20px;
 }
-  
+
 .home-container h1 {
     text-align: center;
+    color: #333;
     margin-bottom: 30px;
-    font-size: 2.5rem;
 }
 
-.property-scroll-area {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
-    padding: 20px 0;
-    max-height: 80vh;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #2c5282 #f0f0f0;
+.listing-scroll-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
 }
 
-.property-scroll-area::-webkit-scrollbar {
-    width: 8px;
+.listing-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 300px;
+    transition: transform 0.2s ease-in-out;
 }
 
-.property-scroll-area::-webkit-scrollbar-track {
-    background: #f0f0f0;
+.listing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.listing-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.listing-details {
+    padding: 15px;
+}
+
+.listing-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.listing-price {
+    color: #2c5282;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.listing-location {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+.listing-owner {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.view-details {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
     border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
-.property-scroll-area::-webkit-scrollbar-thumb {
-    background: #2c5282;
+.view-details:hover {
+    background-color: #0056b3;
+}
+
+.add-listing-form {
+    max-width: 500px;
+    margin: 0 auto 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-listing-form h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.add-listing-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.add-listing-form input {
+    padding: 10px;
+    border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 1em;
 }
 
-.property-scroll-area::-webkit-scrollbar-thumb:hover {
-    background: #234876;
+.add-listing-form input:focus {
+    outline: none;
+    border-color: #007bff;
 }
 
-@media (max-width: 1400px) {
-    .property-scroll-area {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.add-listing-form button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
 }
 
-@media (max-width: 1100px) {
-    .property-scroll-area {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.add-listing-form button:hover {
+    background-color: #0056b3;
 }
 
 @media (max-width: 768px) {
-    .property-scroll-area {
-        grid-template-columns: 1fr;
+    .listing-scroll-area {
+        gap: 15px;
+    }
+
+    .listing-card {
+        width: calc(50% - 15px);
+    }
+
+    .add-listing-form {
+        margin: 0 20px 30px;
     }
 }
 
-.property-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    height: fit-content;
-}
-
-.property-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.property-image {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.property-details {
-    margin-top: 15px;
-    padding: 0 5px;
-}
-
-.property-title {
-    font-size: 1.4rem;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-.property-price {
-    color: #2c5282;
-    font-weight: bold;
-    font-size: 1.3rem;
-    margin-bottom: 8px;
-}
-
-.property-location {
-    color: #666;
-    font-size: 1.1rem;
-    margin-top: 8px;
+@media (max-width: 480px) {
+    .listing-card {
+        width: 100%;
+    }
 }
