@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import './NewListing.css';
 
 function NewListing() {
+  const [users, setUsers] = useState([]);
+  useEffect(() => {
+    fetch('/api/users')
+      .then(response => response.json())
+      .then(data => setUsers(data))
+      .catch(error => console.error("Error fetching users:", error))
+  }, []);
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -19,13 +28,18 @@ function NewListing() {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+      if (e && e.target) {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+          ...prevState,
+          [name]: value
+        }));
+      }
   };
 
+  const handleSelectChange = (selectedOption) => {
+    setFormData(prevState => ({ ...prevState, mySelect: selectedOption ? selectedOption.value : "" }));
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -86,12 +100,23 @@ function NewListing() {
         </div>
 
         <div className="form-group">
-          <label>Owner ID:</label>
-          <input
-            type="number"
+          <label htmlFor="owner">Owner</label>
+          <Select
+            id="owner"
             name="owner"
-            value={formData.owner}
-            onChange={handleChange}
+            value={users.find(option => option.value === formData.owner) || {}}
+            onChange={handleSelectChange}
+            options= {
+              users.map(user => ({
+                value:user.id,
+                label:`${user.name} (${user.email})`
+              }
+              ))
+            }
+            
+            isClearable
+            isSearchable
+            placeholder="Search for an owner..."
             required
           />
         </div>
