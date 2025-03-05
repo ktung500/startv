@@ -475,6 +475,12 @@ def get_reservations():
             "reservations": response.data,
         }), 200
 
+@app.route('/reservations/property/<id>', methods=['GET'])
+def get_property_reservations(id):
+    response = supabase.table('reservations').select('start_date, end_date').eq('listing', id).execute()
+    return jsonify({
+        "reservations": response.data
+    })
 if __name__ == '__main__':
     app.run(debug=True)
 

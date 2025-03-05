@@ -6,25 +6,18 @@ function Home() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newListing, setNewListing] = useState({
-    name: '',
-    address: '',
-    owner: '',
-    price: '',
-    image: 'https://placehold.co/300x200'
-  });
   useEffect(() => {
     fetchListings();
   }, []);
 
   const fetchListings = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/listing');
+      const response = await fetch('http://localhost:5000/listings');
       if (!response.ok) {
         throw new Error('Failed to fetch listings');
       }
       const data = await response.json();
-      setListings(data);
+      setListings(data.listings);
       setLoading(false);
     } catch (err) {
       setError(err.message);
@@ -32,77 +25,41 @@ function Home() {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewListing(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:5000/api/listing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newListing),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add listing');
-      }
-
-      // Clear the form
-      setNewListing({
-        name: '',
-        address: '',
-        owner: '',
-        price: '',
-        image: 'https://placehold.co/300x200'
-      });
-
-      // Refresh the listings list
-      fetchListings();
-    } catch (err) {
-      console.error('Error adding listing:', err);
-    }
-  };
-
-  if (loading) return <div>Loading listings...</div>;
-  if (error) return <div>Error: {error}</div>;
-
   return (
-    <div className="home-container">
-      <h1>Featured Listings</h1>
-      
-      {/* Add listing button */}
-      <div>
-        <Link to="/listing/new" className="add-listing-button">Add New Listing</Link>
-      </div>
-
-      <div className="listing-scroll-area">
-        {listings.map((listing, index) => (
-          <div key={index} className="listing-card">
-            <img
-              src={listing.image}
-              alt={listing.name}
-              className="listing-image"
-            />
-            <div className="listing-details">
-              <div className="listing-title">{listing.name}</div>
-              <div className="listing-price">{listing.price}</div>
-              <div className="listing-location">{listing.address}</div>
-              <div className="listing-owner">Owner: {listing.owner}</div>
-              <Link to={`/details/${listing.id}`} className="view-details">
-                View Details
-              </Link>
-            </div>
+    <div className="home-page">
+      {/* Main Content */}
+      <main className="main-content">
+        {loading ? (
+          <div className="loading-state">
+            <p>Loading listings...</p>
           </div>
-        ))}
-      </div>
+        ) : error ? (
+          <div className="error-state">
+            <p>Error: {error}</p>
+          </div>
+        ) : (
+            <div className="listings-grid">
+            {listings.map((listing) => (
+              <div key={listing.id} className="listing-card">
+                  <img
+                  src={listing.image || 'https://placehold.co/300x200'}
+                  alt={listing.short_description}
+                  className="listing-image"
+                  />
+                  <div className="listing-details">
+                  <h3 className="listing-title">{listing.short_description}</h3>
+                  <p className="listing-location">{listing.city}, {listing.country}</p>
+                  <p className="listing-price">${listing.cost_per_night} per night</p>
+                  <p className="listing-occupancy">Max Guests: {listing.max_occupancy}</p>
+                    <Link to={`/details/${listing.id}`} className="view-details-button">
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+        )}
+      </main>
     </div>
   );
 }

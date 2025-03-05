@@ -1,0 +1,83 @@
+/* src/styles/login.css */
+.login-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .login-container h2 {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #333;
+  }
+  
+  .login-form .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .login-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  .login-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  .login-button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background-color: #3ecf8e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .login-button:hover {
+    background-color: #36b97f;
+  }
+  
+  .login-button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    color: #e74c3c;
+    margin-top: 16px;
+    text-align: center;
+  }
+  
+  .success-message {
+    color: #2ecc71;
+    margin-top: 16px;
+    text-align: center;
+  }
+  
+  .signup-link {
+    text-align: center;
+    margin-top: 16px;
+  }
+  
+  .signup-link a {
+    color: #3ecf8e;
+    text-decoration: none;
+  }
+  
+  .signup-link a:hover {
+    text-decoration: underline;
+  }
+  

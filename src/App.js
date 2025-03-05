@@ -2,13 +2,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, RouterProvider } from "react-router-dom";
 import router from "./Router.js"
+import {AuthProvider} from "./AuthContext.js"
+
 
 function App() {
   return (
-    <>
-      <RouterProvider router={router} />
-    </>
-  );
+      <>
+      <AuthProvider>
+        <RouterProvider router={router} />\
+      </AuthProvider>
+      </>
+  )
 }
 
 

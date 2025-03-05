@@ -135,3 +135,16 @@
   border-radius: 5px;
   cursor: pointer;
 }
+.mantine-DateRangePicker-root {
+  width: 100%;
+}
+
+.mantine-Paper-root {
+  background-color: white;
+}
+
+@media (max-width: 768px) {
+  .mantine-DateRangePicker-root {
+    width: 100%;
+  }
+}

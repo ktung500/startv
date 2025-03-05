@@ -14,7 +14,7 @@ function NewListing() {
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
+    short_description: '',
     description: '',
     owner: '',
     address: '',
@@ -28,18 +28,21 @@ function NewListing() {
   });
 
   const handleChange = (e) => {
-      if (e && e.target) {
-        const { name, value } = e.target;
-        setFormData(prevState => ({
-          ...prevState,
-          [name]: value
-        }));
-      }
+    if (e && e.target) {
+      const { name, value } = e.target;
+      setFormData(prevState => ({
+        ...prevState,
+        [name]: value
+      }));
+    }
   };
 
   const handleSelectChange = (selectedOption) => {
-    setFormData(prevState => ({ ...prevState, mySelect: selectedOption ? selectedOption.value : "" }));
-};
+    setFormData(prevState => ({ 
+      ...prevState, 
+      owner: selectedOption ? selectedOption.value : '' 
+    }));
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -54,7 +57,7 @@ function NewListing() {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/listing', {
+      const response = await fetch('http://localhost:5000/listings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,8 +85,8 @@ function NewListing() {
           <label>Property Name:</label>
           <input
             type="text"
-            name="name"
-            value={formData.name}
+            name="short_description"
+            value={formData.short_description}
             onChange={handleChange}
             required
           />
@@ -106,14 +109,12 @@ function NewListing() {
             name="owner"
             value={users.find(option => option.value === formData.owner) || {}}
             onChange={handleSelectChange}
-            options= {
+            options={
               users.map(user => ({
-                value:user.id,
-                label:`${user.name} (${user.email})`
-              }
-              ))
+                value: user.id,
+                label: `${user.name} (${user.email})`
+              }))
             }
-            
             isClearable
             isSearchable
             placeholder="Search for an owner..."
