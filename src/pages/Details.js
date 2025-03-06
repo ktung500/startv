@@ -93,8 +93,6 @@ const Details = () => {
     setReservationStatus(null);
     
     try {
-      // Get the authenticated user (this is just an example - adjust based on your auth system)
-      // In a real app, you would get the current user's ID from your auth system
       const { data: { session } } = await supabase.auth.getSession();
       console.log(session)
       if (!session) {

@@ -18,6 +18,7 @@ def auth_required(f):
         auth_header = request.headers.get('Authorization')
         
         if not auth_header or not auth_header.startswith('Bearer '):
+            print("Authentication header missing")
             return jsonify({"error": "Authorization header required"}), 401
         
         token = auth_header.replace('Bearer ', '')
@@ -26,8 +27,9 @@ def auth_required(f):
             # Verify the token with Supabase
             user_response = supabase.auth.get_user(token)
             user = user_response.user
-            
+            # print(user)
             if not user:
+                print("Authentication invalid auth token")
                 return jsonify({"error": "Invalid authentication token"}), 401
                 
             # Add user to request context for use in the route
@@ -35,6 +37,7 @@ def auth_required(f):
             return f(*args, **kwargs)
                 
         except Exception as e:
+            print("Authentication error")
             return jsonify({"error": f"Authentication error: {str(e)}"}), 401
     
     return decorated
@@ -480,7 +483,33 @@ def get_property_reservations(id):
     response = supabase.table('reservations').select('start_date, end_date').eq('listing', id).execute()
     return jsonify({
         "reservations": response.data
-    })
+    }), 200
+
+@app.route('/reservations/me', methods=['GET'])
+@auth_required
+def get_my_reservations():
+    try:
+        # Since we're using the @auth_required decorator, the user info is already in request.user
+        user_id = request.user.id
+        # Query reservations made by this user
+        response = supabase.table('reservations')\
+            .select('*, listings(*)') \
+            .eq('primary_guest', user_id)\
+            .order('start_date', desc=False)\
+            .execute()
+        
+        if hasattr(response, 'error') and response.error:
+            return jsonify({"error": response.error.message}), 400
+            
+        return jsonify({
+            "reservations": response.data,
+            "count": len(response.data)
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching user reservations: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
 

@@ -5,6 +5,7 @@ import Layout from './components/Layout.js'
 import NewListing from './pages/NewListing';
 import Login from './pages/Login.js'
 import Profile from './pages/Profile.js'
+import Reservations from './pages/Reservations.js'
 
 const router = createBrowserRouter(
     [
@@ -32,7 +33,11 @@ const router = createBrowserRouter(
                 {
                     path: "/profile",
                     element: <Profile/>
-                }
+                },
+                {
+                    path: "/reservations",
+                    element: <Reservations/>
+                },
             ]
         }
     ]
