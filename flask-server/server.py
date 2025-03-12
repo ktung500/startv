@@ -27,7 +27,6 @@ def auth_required(f):
             # Verify the token with Supabase
             user_response = supabase.auth.get_user(token)
             user = user_response.user
-            # print(user)
             if not user:
                 print("Authentication invalid auth token")
                 return jsonify({"error": "Invalid authentication token"}), 401
@@ -138,7 +137,7 @@ def create_listing():
         listing_data = {
             'short_description': data['short_description'],
             'description': data['description'],
-            'owner_id': user,  # Set owner to authenticated user
+            'owner': data['owner'],  # Set owner to authenticated user
             'address': data['address'],
             'city': data['city'],
             'country': data['country'],
@@ -390,7 +389,7 @@ def get_my_listings():
         # Query listings owned by this user
         response = supabase.table('listings') \
             .select('*') \
-            .eq('owner_id', user.id) \
+            .eq('owner', user.id) \
             .order('created_at', desc=True) \
             .execute()
         
@@ -508,6 +507,46 @@ def get_my_reservations():
         
     except Exception as e:
         print(f"Error fetching user reservations: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/reservations/my-properties', methods=['GET'])
+@auth_required
+def get_my_property_reservations():
+    try:
+        user_id = request.user.id
+        
+        # First get all listings owned by the user
+        listings_response = supabase.table('listings')\
+            .select('id')\
+            .eq('owner', user_id)\
+            .execute()
+            
+        if not listings_response.data:
+            return jsonify({
+                "reservations": [],
+                "count": 0
+            }), 200
+            
+        # Get all listing IDs owned by the user
+        listing_ids = [listing['id'] for listing in listings_response.data]
+        
+        # Query reservations for these listings
+        response = supabase.table('reservations')\
+            .select('*, listings(*), profiles!primary_guest(*)')\
+            .in_('listing', listing_ids)\
+            .order('start_date', desc=False)\
+            .execute()
+        
+        if hasattr(response, 'error') and response.error:
+            return jsonify({"error": response.error.message}), 400
+            
+        return jsonify({
+            "reservations": response.data,
+            "count": len(response.data)
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching property reservations: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

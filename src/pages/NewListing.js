@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Select from 'react-select';
+import { useAuth } from '../AuthContext';
 import './NewListing.css';
 
 function NewListing() {
-  const [users, setUsers] = useState([]);
-  useEffect(() => {
-    fetch('/api/users')
-      .then(response => response.json())
-      .then(data => setUsers(data))
-      .catch(error => console.error("Error fetching users:", error))
-  }, []);
-
   const navigate = useNavigate();
+  const { user, profile, session, loading } = useAuth();
+  
   const [formData, setFormData] = useState({
     short_description: '',
     description: '',
@@ -27,6 +21,15 @@ function NewListing() {
     additional_details: ''
   });
 
+  // Set owner ID from auth context when user data is available
+  useEffect(() => {
+    if (user) {
+      setFormData(prevState => ({
+        ...prevState,
+        owner: String(user.id)
+      }));
+    }
+  }, [user]);
   const handleChange = (e) => {
     if (e && e.target) {
       const { name, value } = e.target;
@@ -37,12 +40,6 @@ function NewListing() {
     }
   };
 
-  const handleSelectChange = (selectedOption) => {
-    setFormData(prevState => ({ 
-      ...prevState, 
-      owner: selectedOption ? selectedOption.value : '' 
-    }));
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -53,7 +50,7 @@ function NewListing() {
       number_of_bedrooms: parseInt(formData.number_of_bedrooms),
       number_of_bathrooms: parseInt(formData.number_of_bathrooms),
       max_occupancy: parseInt(formData.max_occupancy),
-      owner: parseInt(formData.owner)
+      // owner: String(formData.owner) // This is already the user ID from auth context
     };
 
     try {
@@ -61,6 +58,7 @@ function NewListing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(numericFormData),
       });
@@ -77,6 +75,15 @@ function NewListing() {
     }
   };
 
+  // Display a loading message while auth context is initializing
+  if (loading) {
+    return <div className="loading">Loading user information...</div>;
+  }
+
+  // Redirect if not logged in
+  if (!user && !loading) {
+    return <div className="error-message">Please log in to create a listing</div>;
+  }
   return (
     <div className="new-listing-container">
       <h2>Create New Listing</h2>
@@ -102,24 +109,24 @@ function NewListing() {
           />
         </div>
 
+        {/* Hidden input to store the owner ID */}
+        <input 
+          type="hidden"
+          name="owner"
+          value={formData.owner}
+        />
+
+        {/* Display owner information */}
         <div className="form-group">
-          <label htmlFor="owner">Owner</label>
-          <Select
-            id="owner"
-            name="owner"
-            value={users.find(option => option.value === formData.owner) || {}}
-            onChange={handleSelectChange}
-            options={
-              users.map(user => ({
-                value: user.id,
-                label: `${user.name} (${user.email})`
-              }))
-            }
-            isClearable
-            isSearchable
-            placeholder="Search for an owner..."
-            required
-          />
+          <label>Owner:</label>
+          <div className="read-only-field">
+            {profile ? (
+              // Display name from profile if available, otherwise use email
+              `${profile.full_name || profile.name || 'User'} (${user.email})`
+            ) : (
+              user.email
+            )}
+          </div>
         </div>
 
         <div className="form-group">

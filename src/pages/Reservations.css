@@ -162,10 +162,29 @@
     text-decoration: none;
   }
   
-  .contact-host-button {
+  .contact-host-button,
+  .contact-guest-button {
     background-color: white;
     color: #222;
     border: 1px solid #dddddd;
+  }
+
+  .guest-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .guest-info .meta-label {
+    font-size: 14px;
+    color: #717171;
+  }
+
+  .guest-info .meta-value {
+    font-weight: 500;
+    color: #222;
   }
   
   /* Responsive adjustments */
