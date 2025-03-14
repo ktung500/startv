@@ -6,12 +6,14 @@ import { Paper, Group, Text, Button, NumberInput } from '@mantine/core';
 import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
-import supabase from '../supabaseClient'
-
+import supabase from '../supabaseClient';
+import { useAuth } from '../AuthContext';
+import ReservationCalendar from '../components/ReservationCalendar';
 
 const Details = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,13 +22,6 @@ const Details = () => {
   const [reservationStatus, setReservationStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reservations, setReservations] = useState([]);
-
-
-  // Example booked dates
-  const bookedDates = [
-    { from: '2025-03-10', to: '2024-03-15' },
-    { from: '2024-04-10', to: '2024-04-12' },
-  ];
 
   const isDateBooked = (date) => {
     return reservations.some(reservation => {
@@ -45,13 +40,13 @@ const Details = () => {
         }
         const data = await response.json();
         setListing(data.listing);
-        console.log(JSON.stringify(data))
         setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
       }
     };
+
     const fetchReservations = async () => {
       try {
         const response = await fetch(`http://localhost:5000/reservations/property/${id}`);
@@ -64,12 +59,11 @@ const Details = () => {
         console.error("Error fetching reservations:", err);
       }
     };
-  
+
     fetchListing();
     fetchReservations();
   }, [id]);
 
-  // Calculate number of nights and total cost
   const calculateTotalCost = () => {
     if (!dateRange[0] || !dateRange[1] || !listing) {
       return 0;
@@ -94,12 +88,10 @@ const Details = () => {
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      console.log(session)
       if (!session) {
         throw new Error('You must be logged in to make a reservation');
       }
       
-      // Format the dates as YYYY-MM-DD
       const formatDate = (date) => {
         return date.toISOString().split('T')[0];
       };
@@ -113,10 +105,8 @@ const Details = () => {
         start_date: startDate,
         end_date: endDate,
         total_cost: totalCost,
-        number_of_guests: numGuests
+        number_of_guests: numGuests,
       };
-      
-      console.log("Sending reservation data:", reservationData);
       
       const response = await fetch('http://localhost:5000/reservations', {
         method: 'POST',
@@ -124,16 +114,13 @@ const Details = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(reservationData),
-        // credentials: 'include' // Include cookies for authentication if needed
+        body: JSON.stringify(reservationData)
       });
       
       const data = await response.json();
       
       if (response.ok) {
         setReservationStatus({ success: "Reservation created successfully!" });
-        // Optionally redirect to a confirmation page
-        // navigate(`/reservations/${data.reservation.reservation_id}`);
       } else {
         setReservationStatus({ error: data.error || "Failed to create reservation" });
       }
@@ -158,138 +145,136 @@ const Details = () => {
     );
   }
 
-  // Format the property type and location
   const propertyTypeAndLocation = `Entire ${listing.property_type || 'property'} in ${listing.city || ''}, ${listing.country || ''}`;
-  
-  // Format the capacity details
   const capacityDetails = `${listing.max_occupancy || 0} guests · ${listing.number_of_bedrooms || 0} bedroom${listing.number_of_bedrooms !== 1 ? 's' : ''} · ${listing.number_of_bathrooms || 0} bath${listing.number_of_bathrooms !== 1 ? 's' : ''}`;
-  
-  // Calculate total cost
   const totalCost = calculateTotalCost();
 
   return (
-    <div className="details-container">
-      <button className="back-button" onClick={() => navigate('/')}>
-        ← Back to Listings
-      </button>
+    <MantineProvider>
+      <div className="details-container">
+        <button className="back-button" onClick={() => navigate('/')}>
+          ← Back to Listings
+        </button>
 
-      <img 
-        src={listing.image || 'https://placehold.co/600x400'} 
-        alt={listing.short_description} 
-        className="listing-detail-image"
-      />
-      
-      <div className="listing-info">
-        <h1>{listing.short_description}</h1>
-        <div className="property-summary">
-          <h2>{propertyTypeAndLocation}</h2>
-          <p className="capacity-details">{capacityDetails}</p>
-        </div>
-
-        <div className="price-info">
-          <h3>${listing.cost_per_night} per night</h3>
-        </div>
-        <div className="description">
-          <h3>Description</h3>
-          <p>{listing.description || 'No description available.'}</p>
-        </div>
-
-        {listing.additional_details && (
-          <div className="additional-details">
-            <h3>Additional Details</h3>
-            <p>{listing.additional_details}</p>
+        <img 
+          src={listing.image || 'https://placehold.co/600x400'} 
+          alt={listing.short_description} 
+          className="listing-detail-image"
+        />
+        
+        <div className="listing-info">
+          <h1>{listing.short_description}</h1>
+          <div className="property-summary">
+            <h2>{propertyTypeAndLocation}</h2>
+            <p className="capacity-details">{capacityDetails}</p>
           </div>
-        )}
-      </div>
 
-      <MantineProvider>
-        <div className="date-picker-section">
-          <h3>Select your stay dates</h3>
-          <Paper shadow="sm" p="md" radius="md">
-            <DatePicker
-              type="range"
-              label="Select your dates"
-              placeholder="Pick dates"
-              value={dateRange}
-              onChange={setDateRange}
-              numberOfColumns={2}
-              minDate={new Date()}
-              allowSingleDateInRange={false}
-              excludeDate={(date) => isDateBooked(date)}
-              weekendDays={[]}
-              styles={(theme) => ({
-                day: {
-                  '&[data-selected]': {
-                    backgroundColor: theme.colors.blue[6],
-                    color: theme.white,
-                  },
-                  '&[data-in-range]': {
-                    backgroundColor: theme.colors.blue[0],
-                    '&:hover': {
-                      backgroundColor: theme.colors.blue[1],
+          <div className="price-info">
+            <h3>${listing.cost_per_night} per night</h3>
+          </div>
+          <div className="description">
+            <h3>Description</h3>
+            <p>{listing.description || 'No description available.'}</p>
+          </div>
+
+          {listing.additional_details && (
+            <div className="additional-details">
+              <h3>Additional Details</h3>
+              <p>{listing.additional_details}</p>
+            </div>
+          )}
+        </div>
+
+        {/* {user?.id === listing.owner_id ? ( */}
+          <ReservationCalendar reservations={reservations} />
+        {/* ) : ( */}
+          <div className="date-picker-section">
+            <h3>Select your stay dates</h3>
+            <Paper shadow="sm" p="md" radius="md">
+              <DatePicker
+                type="range"
+                label="Select your dates"
+                placeholder="Pick dates"
+                value={dateRange}
+                onChange={setDateRange}
+                numberOfColumns={2}
+                minDate={new Date()}
+                allowSingleDateInRange={false}
+                excludeDate={(date) => isDateBooked(date)}
+                weekendDays={[]}
+                styles={(theme) => ({
+                  day: {
+                    '&[data-selected]': {
+                      backgroundColor: theme.colors.blue[6],
+                      color: theme.white,
+                    },
+                    '&[data-in-range]': {
+                      backgroundColor: theme.colors.blue[0],
+                      '&:hover': {
+                        backgroundColor: theme.colors.blue[1],
+                      },
+                    },
+                    '&[data-disabled]': {
+                      textDecoration: 'line-through',
+                      color: theme.colors.gray[5],
                     },
                   },
-                  '&[data-disabled]': {
-                    textDecoration: 'line-through',
-                    color: theme.colors.gray[5],
+                  month: {
+                    padding: '10px',
                   },
-                },
-                month: {
-                  padding: '10px',
-                },
-              })}
-            />
-            
-            <NumberInput
-              mt="md"
-              label="Number of guests"
-              value={numGuests}
-              onChange={setNumGuests}
-              min={1}
-              max={listing.max_occupancy || 1}
-              required
-            />
+                })}
+              />
+              
+              <NumberInput
+                mt="md"
+                label="Number of guests"
+                value={numGuests}
+                onChange={setNumGuests}
+                min={1}
+                max={listing.max_occupancy || 1}
+                required
+              />
 
-            {totalCost > 0 && (
-              <div className="cost-summary" style={{ marginTop: "15px" }}>
-                <Text weight={500}>Price details:</Text>
-                <Text>
-                  ${listing.cost_per_night} x {Math.ceil(Math.abs(dateRange[1] - dateRange[0]) / (1000 * 60 * 60 * 24))} nights = ${totalCost}
+              {totalCost > 0 && (
+                <div className="cost-summary" style={{ marginTop: "15px" }}>
+                  <Text weight={500}>Price details:</Text>
+                  <Text>
+                    ${listing.cost_per_night} x {Math.ceil(Math.abs(dateRange[1] - dateRange[0]) / (1000 * 60 * 60 * 24))} nights = ${totalCost}
+                  </Text>
+                </div>
+              )}
+
+              {reservationStatus && (
+                <div className={`status-message ${reservationStatus.error ? 'error' : 'success'}`} style={{ 
+                  marginTop: "15px", 
+                  padding: "10px", 
+                  backgroundColor: reservationStatus.error ? "#ffeded" : "#edfff5",
+                  color: reservationStatus.error ? "#d32f2f" : "#388e3c",
+                  borderRadius: "4px"
+                }}>
+                  {reservationStatus.error || reservationStatus.success}
+                </div>
+              )}
+
+              <Group mt="lg" position="apart">
+                <Text size="sm" color="dimmed">
+                  {dateRange[0] && dateRange[1] 
+                    ? `Selected: ${dateRange[0].toLocaleDateString()} - ${dateRange[1].toLocaleDateString()}`
+                    : 'No dates selected'}
                 </Text>
-              </div>
-            )}
-
-            {/* Show status message if any */}
-            {reservationStatus && (
-              <div className={`status-message ${reservationStatus.error ? 'error' : 'success'}`} style={{ 
-                marginTop: "15px", 
-                padding: "10px", 
-                backgroundColor: reservationStatus.error ? "#ffeded" : "#edfff5",
-                color: reservationStatus.error ? "#d32f2f" : "#388e3c",
-                borderRadius: "4px"
-              }}>
-                {reservationStatus.error || reservationStatus.success}
-              </div>
-            )}
-
-            <Group mt="lg" position="apart">
-              <Text size="sm" color="dimmed">
-                {dateRange[0] && dateRange[1] 
-                  ? `Selected: ${dateRange[0].toLocaleDateString()} - ${dateRange[1].toLocaleDateString()}`
-                  : 'No dates selected'}
-              </Text>
-              <Button
-                loading={isSubmitting}
-                disabled={!dateRange[0] || !dateRange[1] || isSubmitting}
-                onClick={handleReservation}
-              >
-                {isSubmitting ? 'Creating Reservation...' : 'Reserve'}
-              </Button>
-            </Group>
-          </Paper>
-        </div>
-      </MantineProvider>
-    </div>
+                <Button
+                  loading={isSubmitting}
+                  disabled={!dateRange[0] || !dateRange[1] || isSubmitting}
+                  onClick={handleReservation}
+                >
+                  {isSubmitting ? 'Creating Reservation...' : 'Reserve'}
+                </Button>
+              </Group>
+            </Paper>
+          </div>
+        {/* )} */}
+      </div>
+    </MantineProvider>
   );
 };
 

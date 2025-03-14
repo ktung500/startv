@@ -1,0 +1,66 @@
+.reservation-calendar-container {
+    margin-top: 2rem;
+}
+
+.calendar-day {
+    height: 100%;
+    min-height: 80px;
+    padding: 4px;
+}
+
+.calendar-day.reserved {
+    background-color: #ffebee;
+    cursor: pointer;
+}
+
+.day-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 2px;
+}
+
+.reservation-info {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #d32f2f;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reservation-info > * {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.legend-color.reserved {
+    background-color: #ffebee;
+    border: 1px solid #d32f2f;
+}
+
+.legend-color.available {
+    background-color: white;
+    border: 1px solid #ccc;
+}

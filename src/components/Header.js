@@ -36,6 +36,10 @@ function Header() {
             <Link to="/listing/new" className="nav-button">
               List your property
             </Link>
+
+            <Link to="/myListings" className="nav-button">
+              Manage Listings
+            </Link>
             
             {loading ? (
               <span>Loading...</span>

@@ -1,13 +1,12 @@
 // src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import supabase from '../supabaseClient';
+import { useAuth } from '../AuthContext';
+import supabase from '../supabaseClient'; 
 import './Profile.css'; // Create this CSS file for styling
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {user, session, profile, updateProfile, supabase, loading: authLoading} = useAuth();
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,56 +19,26 @@ const Profile = () => {
   
   const navigate = useNavigate();
 
-  // Fetch user session and profile data
+  // Redirect if not authenticated
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Get current user session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          // Redirect to login if no session
-          navigate('/login');
-          return;
-        }
-        
-        setUser(session.user);
-        
-        // Fetch profile data from profiles table
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileError) {
-          throw profileError;
-        }
-        
-        if (profileData) {
-          setProfile(profileData);
-          // Initialize form data with profile data
-          setFormData({
-            username: profileData.username || '',
-            full_name: profileData.full_name || '',
-            avatar_url: profileData.avatar_url || '',
-            website: profileData.website || '',
-            bio: profileData.bio || ''
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchUserAndProfile();
-  }, [navigate]);
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [authLoading, user, navigate]);
+
+  // Set form data when profile is loaded
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        username: profile.username || '',
+        full_name: profile.full_name || '',
+        avatar_url: profile.avatar_url || '',
+        website: profile.website || '',
+        bio: profile.bio || ''
+      });
+    }
+  }, [profile]);
+
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -83,40 +52,10 @@ const Profile = () => {
   // Update profile data
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      setLoading(true);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: formData.username,
-          full_name: formData.full_name,
-          avatar_url: formData.avatar_url,
-          website: formData.website,
-          bio: formData.bio,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      // Refetch the profile to get the latest data
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      setProfile(data);
+    const { error } = await updateProfile(formData);
+    
+    if (!error) {
       setEditing(false);
-      
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      setError('Failed to update profile');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -130,12 +69,16 @@ const Profile = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="profile-container">
         <div className="loading">Loading profile information...</div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null; // Will redirect due to useEffect
   }
 
   if (error) {
@@ -221,14 +164,14 @@ const Profile = () => {
           </div>
           
           <div className="button-group">
-            <button type="submit" className="save-button" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Profile'}
+            <button type="submit" className="save-button" disabled={authLoading}>
+              {authLoading ? 'Saving...' : 'Save Profile'}
             </button>
-            <button 
-              type="button" 
-              className="cancel-button" 
+            <button
+              type="button"
+              className="cancel-button"
               onClick={() => setEditing(false)}
-              disabled={loading}
+              disabled={authLoading}
             >
               Cancel
             </button>

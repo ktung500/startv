@@ -1,7 +1,7 @@
 // src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import supabase from '../supabaseClient';
+import { useAuth } from '../AuthContext';
 import './Login.css'
 
 const Login = () => {
@@ -10,6 +10,14 @@ const Login = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { supabase, user } = useAuth();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,8 +25,7 @@ const Login = () => {
     setMessage('');
 
     try {
-      // Use Supabase client directly for authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -26,13 +33,9 @@ const Login = () => {
       if (error) {
         throw error;
       }
-      setMessage('Login successful!');
       
-      // Redirect user after successful login
-      // You can change this to wherever you want users to go after login
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      setMessage('Login successful!');
+      navigate('/');
     } catch (error) {
       setMessage('Error: ' + (error.error_description || error.message));
     } finally {
