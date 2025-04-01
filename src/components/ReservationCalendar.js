@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar } from '@mantine/dates';
-import { Paper, Text } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 import './ReservationCalendar.css';
 
 const ReservationCalendar = ({ reservations }) => {
-  // Function to check if a date has a reservation
+  const navigate = useNavigate();
+  const [hoveredReservationId, setHoveredReservationId] = useState(null);
+
   const getReservationForDate = (date) => {
     return reservations.find(reservation => {
       const start = new Date(reservation.start_date);
@@ -13,61 +15,46 @@ const ReservationCalendar = ({ reservations }) => {
     });
   };
 
-  // Custom day render function
   const renderDay = (date) => {
     const reservation = getReservationForDate(date);
-    const dayKey = date.toISOString();
-
+    
     if (reservation) {
+      const isHovered = hoveredReservationId === reservation.reservation_id;
+      
       return (
-        <div key={dayKey} className="calendar-day reserved">
-          <div className="day-content">
-            <span>{date.getDate()}</span>
-            <div className="reservation-info">
-              <Text size="xs" weight={500}>Reserved</Text>
-              <Text size="xs">{reservation.profiles?.full_name || 'Guest'}</Text>
-              <Text size="xs">Guests: {reservation.number_of_guests}</Text>
-              <Text size="xs">${reservation.total_cost}</Text>
-            </div>
-          </div>
+        <div 
+          onClick={() => navigate(`/reservation/${reservation.reservation_id}`)}
+          onMouseEnter={() => setHoveredReservationId(reservation.reservation_id)}
+          onMouseLeave={() => setHoveredReservationId(null)}
+          style={{ 
+            cursor: 'pointer',
+            backgroundColor: isHovered ? '#ffcdd2' : '#ffebee',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            transition: 'background-color 0.2s ease'
+          }}
+        >
+          {date.getDate()}
         </div>
       );
     }
 
-    return (
-      <div key={dayKey} className="calendar-day">
-        <span>{date.getDate()}</span>
-      </div>
-    );
+    return date.getDate();
   };
 
   return (
-    <Paper shadow="sm" radius="md" p="md" className="reservation-calendar-container">
+    <div className="reservation-calendar-container">
       <h3>Reservation Calendar</h3>
       <Calendar
         size="xl"
         fullWidth
         renderDay={renderDay}
-        styles={(theme) => ({
-          calendar: {
-            width: '100%'
-          },
-          cell: {
-            border: `1px solid ${theme.colors.gray[2]}`
-          }
-        })}
+       
       />
-      <div className="calendar-legend">
-        <div className="legend-item">
-          <div className="legend-color reserved"></div>
-          <Text size="sm">Reserved</Text>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color available"></div>
-          <Text size="sm">Available</Text>
-        </div>
-      </div>
-    </Paper>
+    </div>
   );
 };
 

@@ -479,7 +479,7 @@ def get_reservations():
 
 @app.route('/reservations/property/<id>', methods=['GET'])
 def get_property_reservations(id):
-    response = supabase.table('reservations').select('start_date, end_date,  profiles:primary_guest(full_name)').eq('listing', id).execute()
+    response = supabase.table('reservations').select('reservation_id','start_date, end_date,  profiles:primary_guest(full_name)').eq('listing', id).execute()
     return jsonify({
         "reservations": response.data
     }), 200
@@ -547,6 +547,31 @@ def get_my_property_reservations():
         
     except Exception as e:
         print(f"Error fetching property reservations: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
+# Get single reservation details
+@app.route('/reservations/<reservation_id>', methods=['GET'])
+@auth_required
+def get_a_reservation(reservation_id):
+    try:
+        # Since we're using the @auth_required decorator, the user info is already in request.user
+        user_id = request.user.id
+        # Query reservations made by this user
+        response = supabase.table('reservations')\
+            .select('*, listings(*), profiles(*)') \
+            .eq('reservation_id', reservation_id)\
+            .execute()
+        
+        if hasattr(response, 'error') and response.error:
+            return jsonify({"error": response.error.message}), 400
+            
+        return jsonify({
+            "reservation": response.data,
+            "count": len(response.data)
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching user reservations: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

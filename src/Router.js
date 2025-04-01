@@ -7,6 +7,7 @@ import Login from './pages/Login.js'
 import Profile from './pages/Profile.js'
 import Reservations from './pages/Reservations.js'
 import MyListings from "./pages/MyListings.js";
+import ResDetails from "./pages/Res_details.js";
 const router = createBrowserRouter(
     [
         {
@@ -41,6 +42,10 @@ const router = createBrowserRouter(
                 {
                     path: "/myListings",
                     element: <MyListings/>
+                },
+                {
+                    path: "/reservation/:id",
+                    element: <ResDetails/>
                 },
             ]
         }
