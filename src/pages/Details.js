@@ -22,6 +22,7 @@ const Details = () => {
   const [reservationStatus, setReservationStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reservations, setReservations] = useState([]);
+  const [ownerProfile, setOwnerProfile] = useState(null);
 
   const isDateBooked = (date) => {
     return reservations.some(reservation => {
@@ -63,6 +64,25 @@ const Details = () => {
     fetchListing();
     fetchReservations();
   }, [id]);
+
+  // Fetch the owner's profile from Supabase if there's a listing and owner_id
+  useEffect(() => {
+    const fetchOwnerProfile = async () => {
+      if (listing && listing.owner) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', listing.owner)
+          .single();
+        if (!error && data) {
+          setOwnerProfile(data);
+        } else {
+          setOwnerProfile({ username: "Unknown" });
+        }
+      }
+    };
+    fetchOwnerProfile();
+  }, [listing]);
 
   const calculateTotalCost = () => {
     if (!dateRange[0] || !dateRange[1] || !listing) {
@@ -164,6 +184,12 @@ const Details = () => {
         
         <div className="listing-info">
           <h1>{listing.short_description}</h1>
+          <div style={{marginBottom: "8px", color: "#246c38", fontWeight: 500, fontSize: "1.05rem"}}>
+            Hosted by{' '}
+            {ownerProfile && ownerProfile.username
+              ? ownerProfile.username
+              : "Unknown"}
+          </div>
           <div className="property-summary">
             <h2>{propertyTypeAndLocation}</h2>
             <p className="capacity-details">{capacityDetails}</p>

@@ -5,6 +5,16 @@ import { useAuth } from '../AuthContext';
 import supabase from '../supabaseClient'; 
 import './Profile.css'; // Create this CSS file for styling
 
+/**
+ * Utility to get initials from name, fallback to "U"
+ */
+function getInitials(name) {
+  if (!name) return "U";
+  const parts = name.split(" ");
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 const Profile = () => {
   const {user, session, profile, updateProfile, supabase, loading: authLoading} = useAuth();
   const [error, setError] = useState(null);
@@ -91,163 +101,242 @@ const Profile = () => {
   }
 
   return (
-    <div className="profile-container">
-      <h1>My Profile</h1>
-      
-      {editing ? (
-        // Edit mode
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-group">
-            <label>Email</label>
-            <input type="text" value={user?.email || ''} disabled />
-            <p className="field-note">Email cannot be changed</p>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Username"
+    <div className="profile-container-modern">
+      <div className="profile-card-modern">
+
+        {/* Utility to extract initials */}
+        {/*
+          Returns e.g. "JD" for "John Doe", falls back to "U"
+        */}
+        {/* getInitials now imported above for initials avatar */}
+
+        {/* Avatar at top for both modes */}
+        <div className="profile-avatar-modern">
+          {(editing
+              ? formData.avatar_url
+              : profile?.avatar_url
+            ) ? (
+            <img
+              src={editing ? formData.avatar_url : profile?.avatar_url}
+              alt="Profile avatar"
+              onError={e => {
+                // fallback to initials if image broken
+                e.target.style.display = "none";
+                e.target.parentNode.querySelector('.profile-initials-avatar-modern').style.display = "flex";
+              }}
+              style={{ display: "block"}}
             />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="full_name">Full Name</label>
-            <input
-              id="full_name"
-              name="full_name"
-              type="text"
-              value={formData.full_name}
-              onChange={handleChange}
-              placeholder="Full Name"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="avatar_url">Avatar URL</label>
-            <input
-              id="avatar_url"
-              name="avatar_url"
-              type="text"
-              value={formData.avatar_url}
-              onChange={handleChange}
-              placeholder="Avatar URL"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="website">Website</label>
-            <input
-              id="website"
-              name="website"
-              type="text"
-              value={formData.website}
-              onChange={handleChange}
-              placeholder="Website"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="bio">Bio</label>
-            <textarea
-              id="bio"
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              placeholder="Tell us about yourself"
-              rows="4"
-            />
-          </div>
-          
-          <div className="button-group">
-            <button type="submit" className="save-button" disabled={authLoading}>
-              {authLoading ? 'Saving...' : 'Save Profile'}
-            </button>
-            <button
-              type="button"
-              className="cancel-button"
-              onClick={() => setEditing(false)}
-              disabled={authLoading}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : (
-        // View mode
-        <div className="profile-details">
-          {profile?.avatar_url && (
-            <div className="profile-avatar">
-              <img src={profile.avatar_url} alt="Profile" />
-            </div>
-          )}
-          
-          <div className="profile-info">
-            <div className="info-group">
-              <h3>Email</h3>
-              <p>{user?.email}</p>
-            </div>
-            
-            {profile?.username && (
-              <div className="info-group">
-                <h3>Username</h3>
-                <p>{profile.username}</p>
-              </div>
-            )}
-            
-            {profile?.full_name && (
-              <div className="info-group">
-                <h3>Full Name</h3>
-                <p>{profile.full_name}</p>
-              </div>
-            )}
-            
-            {profile?.website && (
-              <div className="info-group">
-                <h3>Website</h3>
-                <p>
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                    {profile.website}
-                  </a>
-                </p>
-              </div>
-            )}
-            
-            {profile?.bio && (
-              <div className="info-group">
-                <h3>Bio</h3>
-                <p>{profile.bio}</p>
-              </div>
-            )}
-            
-            <div className="info-group">
-              <h3>Member Since</h3>
-              <p>{new Date(profile?.created_at).toLocaleDateString()}</p>
-            </div>
-          </div>
-          
-          <div className="button-group">
-            <button 
-              onClick={() => setEditing(true)} 
-              className="edit-button"
-            >
-              Edit Profile
-            </button>
-            <button 
-              onClick={handleSignOut} 
-              className="signout-button"
-            >
-              Sign Out
-            </button>
+          ) : null}
+          {/* Initials fallback (default hidden if image exists) */}
+          <div
+            className="profile-initials-avatar-modern"
+            style={{
+              display: (editing ? formData.avatar_url : profile?.avatar_url) ? "none" : "flex"
+            }}
+          >
+            {getInitials(editing ? formData.full_name : profile?.full_name)}
           </div>
         </div>
-      )}
+        <h2 className="profile-title-modern">
+          {profile?.username ? profile.username : "Profile"}
+        </h2>
+
+        {editing ? (
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setError(null);
+            // Only send fields we actually use (no website)
+            const minimalFormData = {
+              full_name: formData.full_name,
+              username: formData.username,
+              avatar_url: formData.avatar_url,
+              bio: formData.bio,
+            };
+            const { error: upError } = await updateProfile(minimalFormData);
+            if (upError) {
+              setError(upError.message || "Failed to update profile.");
+            } else {
+              setEditing(false);
+            }
+          }} className="profile-form-modern">
+            {/* Edit picture button & hidden file input under avatar */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+              <input
+                type="file"
+                id="profile-avatar-upload"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  // Show immediate preview
+                  const tempUrl = URL.createObjectURL(file);
+                  setFormData(current => ({
+                    ...current,
+                    avatar_url: tempUrl
+                  }));
+                  // Upload to Supabase Storage (bucket: "avatars")
+                  try {
+                    const fileExt = file.name.split('.').pop();
+                    const filePath = `profile_${user.id}_${Date.now()}.${fileExt}`;
+                    const { data, error} = await supabase.storage
+                      .from("avatars")
+                      .upload(filePath, file, {upsert: false});
+                    if (error) {
+                      console.log('Error uploading file:', error);
+                    } else {
+                      console.log('File uploaded successfully:', data);
+                    }
+                    // Get public URL
+                    const { data: publicUrlData } = supabase.storage
+                      .from("avatars")
+                      .getPublicUrl(filePath);
+                    setFormData(current => ({
+                      ...current,
+                      avatar_url: publicUrlData.publicUrl
+                    }));
+                    setError(null);
+                  } catch (err) {
+                    setError("Unexpected error: " + (err.message || err));
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="profile-edit-picture-btn-modern"
+                style={{
+                  margin: "6px 0 20px 0",
+                  background: "#e9f8f1",
+                  color: "#176441",
+                  border: "none",
+                  borderRadius: "5px",
+                  fontWeight: 500,
+                  fontSize: "1rem",
+                  padding: "8px 16px",
+                  letterSpacing: ".01em",
+                  cursor: "pointer",
+                  boxShadow: "0 1px 5px #72d7b74a"
+                }}
+                onClick={() => {
+                  document.getElementById("profile-avatar-upload").click();
+                }}
+              >
+                Edit Picture
+              </button>
+            </div>
+            <div className="profile-fields-modern">
+              <div>
+                <label className="profile-label-modern" htmlFor="full_name">
+                  Full Name
+                </label>
+                <input
+                  id="full_name"
+                  name="full_name"
+                  type="text"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  className="profile-input-modern"
+                />
+              </div>
+              <div>
+                <label className="profile-label-modern">Email</label>
+                <input
+                  type="text"
+                  value={user?.email || ""}
+                  disabled
+                  className="profile-input-modern"
+                />
+              </div>
+              {/* Avatar URL and file input REMOVED from here */}
+              <div>
+                <label className="profile-label-modern" htmlFor="username">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Username"
+                  className="profile-input-modern"
+                />
+              </div>
+              <div>
+                <label className="profile-label-modern" htmlFor="bio">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  placeholder="Tell us about yourself"
+                  rows="3"
+                  className="profile-input-modern"
+                />
+              </div>
+            </div>
+            <div className="profile-button-group-modern">
+              <button type="submit" className="profile-save-btn-modern" disabled={authLoading}>
+                {authLoading ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="profile-cancel-btn-modern"
+                disabled={authLoading}
+              >
+                Cancel
+              </button>
+            </div>
+            {error && (
+              <div className="profile-error-modern">{error}</div>
+            )}
+          </form>
+        ) : (
+          <div className="profile-info-modern">
+            <div className="profile-info-row-modern">
+              <span className="profile-info-label-modern">Full Name</span>
+              <span>{profile?.full_name || "-"}</span>
+            </div>
+            <div className="profile-info-row-modern">
+              <span className="profile-info-label-modern">Email</span>
+              <span>{user?.email}</span>
+            </div>
+            <div className="profile-info-row-modern">
+              <span className="profile-info-label-modern">Member Since</span>
+              <span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "-"}</span>
+            </div>
+            <div className="profile-info-row-modern">
+              <span className="profile-info-label-modern">Username</span>
+              <span>{profile?.username || "-"}</span>
+            </div>
+            <div className="profile-info-row-modern">
+              <span className="profile-info-label-modern">Bio</span>
+              <span>{profile?.bio || "-"}</span>
+            </div>
+            <div className="profile-button-group-modern">
+              <button
+                onClick={() => setEditing(true)}
+                className="profile-edit-btn-modern"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="profile-signout-btn-modern"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
+/* Modern fallback initials avatar */
 export default Profile;
