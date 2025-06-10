@@ -10,6 +10,8 @@ import supabase from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import ReservationCalendar from '../components/ReservationCalendar';
 
+import AuthorizedGuests from '../components/AuthorizedGuests';
+
 const Details = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const Details = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reservations, setReservations] = useState([]);
   const [ownerProfile, setOwnerProfile] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const isDateBooked = (date) => {
     return reservations.some(reservation => {
@@ -211,9 +214,111 @@ const Details = () => {
           )}
         </div>
 
-        {/* {user?.id === listing.owner_id ? ( */}
-          <ReservationCalendar reservations={reservations} />
-        {/* ) : ( */}
+        {user && listing && user.id === listing.owner && (
+          <AuthorizedGuests listingId={listing.id} />
+        )}
+
+        {/* Always show calendar; date picker toggled for owners */}
+        <ReservationCalendar reservations={reservations} />
+
+        {user && listing && user.id === listing.owner ? (
+          <>
+            <Button
+              onClick={() => setShowDatePicker((show) => !show)}
+              mt="sm"
+              mb="md"
+              style={{ margin: "24px 0 16px 0" }}
+            >
+              {showDatePicker ? "Hide Date Picker Section" : "Show Date Picker Section"}
+            </Button>
+            {showDatePicker && (
+              <div className="date-picker-section">
+                <h3>Select your stay dates</h3>
+                <Paper shadow="sm" p="md" radius="md">
+                  <DatePicker
+                    type="range"
+                    label="Select your dates"
+                    placeholder="Pick dates"
+                    value={dateRange}
+                    onChange={setDateRange}
+                    numberOfColumns={2}
+                    minDate={new Date()}
+                    allowSingleDateInRange={false}
+                    excludeDate={(date) => isDateBooked(date)}
+                    weekendDays={[]}
+                    styles={(theme) => ({
+                      day: {
+                        '&[data-selected]': {
+                          backgroundColor: theme.colors.blue[6],
+                          color: theme.white,
+                        },
+                        '&[data-in-range]': {
+                          backgroundColor: theme.colors.blue[0],
+                          '&:hover': {
+                            backgroundColor: theme.colors.blue[1],
+                          },
+                        },
+                        '&[data-disabled]': {
+                          textDecoration: 'line-through',
+                          color: theme.colors.gray[5],
+                        },
+                      },
+                      month: {
+                        padding: '10px',
+                      },
+                    })}
+                  />
+
+                  <NumberInput
+                    mt="md"
+                    label="Number of guests"
+                    value={numGuests}
+                    onChange={setNumGuests}
+                    min={1}
+                    max={listing.max_occupancy || 1}
+                    required
+                  />
+
+                  {totalCost > 0 && (
+                    <div className="cost-summary" style={{ marginTop: "15px" }}>
+                      <Text weight={500}>Price details:</Text>
+                      <Text>
+                        ${listing.cost_per_night} x {Math.ceil(Math.abs(dateRange[1] - dateRange[0]) / (1000 * 60 * 60 * 24))} nights = ${totalCost}
+                      </Text>
+                    </div>
+                  )}
+
+                  {reservationStatus && (
+                    <div className={`status-message ${reservationStatus.error ? 'error' : 'success'}`} style={{
+                      marginTop: "15px",
+                      padding: "10px",
+                      backgroundColor: reservationStatus.error ? "#ffeded" : "#edfff5",
+                      color: reservationStatus.error ? "#d32f2f" : "#388e3c",
+                      borderRadius: "4px"
+                    }}>
+                      {reservationStatus.error || reservationStatus.success}
+                    </div>
+                  )}
+
+                  <Group mt="lg" position="apart">
+                    <Text size="sm" color="dimmed">
+                      {dateRange[0] && dateRange[1]
+                        ? `Selected: ${dateRange[0].toLocaleDateString()} - ${dateRange[1].toLocaleDateString()}`
+                        : 'No dates selected'}
+                    </Text>
+                    <Button
+                      loading={isSubmitting}
+                      disabled={!dateRange[0] || !dateRange[1] || isSubmitting}
+                      onClick={handleReservation}
+                    >
+                      {isSubmitting ? 'Creating Reservation...' : 'Reserve'}
+                    </Button>
+                  </Group>
+                </Paper>
+              </div>
+            )}
+          </>
+        ) : (
           <div className="date-picker-section">
             <h3>Select your stay dates</h3>
             <Paper shadow="sm" p="md" radius="md">
@@ -250,7 +355,7 @@ const Details = () => {
                   },
                 })}
               />
-              
+
               <NumberInput
                 mt="md"
                 label="Number of guests"
@@ -271,9 +376,9 @@ const Details = () => {
               )}
 
               {reservationStatus && (
-                <div className={`status-message ${reservationStatus.error ? 'error' : 'success'}`} style={{ 
-                  marginTop: "15px", 
-                  padding: "10px", 
+                <div className={`status-message ${reservationStatus.error ? 'error' : 'success'}`} style={{
+                  marginTop: "15px",
+                  padding: "10px",
                   backgroundColor: reservationStatus.error ? "#ffeded" : "#edfff5",
                   color: reservationStatus.error ? "#d32f2f" : "#388e3c",
                   borderRadius: "4px"
@@ -284,7 +389,7 @@ const Details = () => {
 
               <Group mt="lg" position="apart">
                 <Text size="sm" color="dimmed">
-                  {dateRange[0] && dateRange[1] 
+                  {dateRange[0] && dateRange[1]
                     ? `Selected: ${dateRange[0].toLocaleDateString()} - ${dateRange[1].toLocaleDateString()}`
                     : 'No dates selected'}
                 </Text>
@@ -298,7 +403,7 @@ const Details = () => {
               </Group>
             </Paper>
           </div>
-        {/* )} */}
+        )}
       </div>
     </MantineProvider>
   );

@@ -45,6 +45,29 @@ def auth_required(f):
 def home():
     return "Flask + Supabase API is running!"
 
+
+# Get authorized guests for a listing (listing_access + profiles)
+@app.route('/listing_access/<listing_id>', methods=['GET'])
+def get_listing_access(listing_id):
+    try:
+        # Query listing_access table for given listing and join with profiles
+        response = supabase.table('listing_access').select('*, profiles:user(username)').eq('listing', listing_id).execute()
+        if hasattr(response, 'error') and response.error:
+            return jsonify({"error": response.error.message}), 400
+
+        access_records = []
+        for record in response.data:
+            if record.get('profiles'):
+                access_records.append({
+                    "user_id": record.get('user'),
+                    "username": record['profiles'].get('username'),
+                    "access_tier": record.get('access_tier')
+                })
+        return jsonify({"authorized": access_records}), 200
+    except Exception as e:
+        print(f"Error fetching listing access: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 # Example: Fetch all users from Supabase
 @app.route('/users', methods=['GET'])
 def get_users():
@@ -185,9 +208,33 @@ def get_listings():
         owner_id = request.args.get('owner_id')
         limit = request.args.get('limit', 20, type=int)
         offset = request.args.get('offset', 0, type=int)
+        user_id = request.args.get('user_id')
         
-        # Start building the query
-        query = supabase.table('listings').select('*')
+        # Only allow access if user_id is supplied
+        if not user_id:
+            return jsonify({
+                "listings": [],
+                "count": 0,
+                "offset": offset,
+                "limit": limit
+            }), 200
+        
+        # Step 1: Fetch list of listing_ids this user has access to
+        access_resp = supabase.table('listing_access').select('listing').eq('user', user_id).execute()
+        if hasattr(access_resp, 'error') and access_resp.error:
+            return jsonify({"error": access_resp.error.message}), 400
+        allowed_listing_ids = [row['listing'] for row in access_resp.data]
+
+        if not allowed_listing_ids:
+            return jsonify({
+                "listings": [],
+                "count": 0,
+                "offset": offset,
+                "limit": limit
+            }), 200
+
+        # Start building the query (with restriction)
+        query = supabase.table('listings').select('*').in_('id', allowed_listing_ids)
         
         # Apply filters if they exist
         if city:
