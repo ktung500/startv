@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import './Header.css';
 import { useAuth } from '../AuthContext';
 
@@ -37,24 +37,40 @@ function Header() {
           </div>
   
           <div className="nav-right">
-            <Link to="/reservations" className="nav-button">
+            <NavLink
+              to="/"
+              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+              end
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/reservations"
+              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+            >
               Reservations
-            </Link>
+            </NavLink>
 
-            <Link to="/listing/new" className="nav-button">
+            <NavLink
+              to="/listing/new"
+              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+            >
               List your property
-            </Link>
+            </NavLink>
 
-            <Link to="/myListings" className="nav-button">
+            <NavLink
+              to="/myListings"
+              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+            >
               Manage Listings
-            </Link>
+            </NavLink>
             
             {loading ? (
               <span>Loading...</span>
             ) : user ? (
               // Show user info when logged in
               <div className="user-menu">
-                <Link to="/profile" >
+                <Link to="/profile" className="nav-link">
                   <span className="nav-avatar-circle" style={{
                     width: 36,
                     height: 36,
@@ -96,9 +112,12 @@ function Header() {
               </div>
             ) : (
               // Show login button when not logged in
-              <Link to="/login" className="nav-button">
+              <NavLink
+                to="/login"
+                className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+              >
                 Sign In
-              </Link>
+              </NavLink>
             )}
           </div>
         </nav>

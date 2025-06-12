@@ -8,6 +8,7 @@ import Profile from './pages/Profile.js'
 import Reservations from './pages/Reservations.js'
 import MyListings from "./pages/MyListings.js";
 import ResDetails from "./pages/Res_details.js";
+import EditListing from "./pages/EditListing.js";
 const router = createBrowserRouter(
     [
         {
@@ -26,6 +27,10 @@ const router = createBrowserRouter(
                 {
                     path: "/listing/new",
                     element: <NewListing/>
+                },
+                {
+                    path: "/listing/edit/:id",
+                    element: <EditListing/>
                 },
                 {
                     path: "/login",
