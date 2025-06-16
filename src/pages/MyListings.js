@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { Link } from 'react-router-dom';
 import './MyListings.css';
+import ListingCard from '../components/ListingCard';
 
 function MyListings() {
     const [myListings, setMyListings] = useState([]);
@@ -70,27 +71,7 @@ function MyListings() {
             ) : (
                 <div className="listings-grid">
                     {myListings.map((listing) => (
-                        <div key={listing.id} className="listing-card">
-                            <img
-                                src={listing.image || 'https://placehold.co/300x200'}
-                                alt={listing.short_description}
-                                className="listing-image"
-                            />
-                            <div className="listing-details">
-                                <h3 className="listing-title">{listing.short_description || "Property"}</h3>
-                                <p className="listing-location">{listing.city}, {listing.country}</p>
-                                <p className="listing-price">${listing.cost_per_night} per night</p>
-                                <p className="listing-occupancy">Max Guests: {listing.max_occupancy}</p>
-                                <div className="listing-actions">
-                                    <Link to={`/details/${listing.id}`} className="view-details-button">
-                                        View Details
-                                    </Link>
-                                    <Link to={`/listing/edit/${listing.id}`} className="edit-listing-button">
-                                        Edit Listing
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
+                        <ListingCard key={listing.id} listing={listing} />
                     ))}
                 </div>
             )}

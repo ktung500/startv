@@ -1,0 +1,107 @@
+.listing-card {
+  display: block;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ececec;
+  overflow: hidden;
+  text-decoration: none;
+  transition: box-shadow 0.16s, transform 0.16s;
+  min-width: 0;
+  max-width: 370px;
+  width: 100%;
+  }
+  
+  .listing-card {
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  
+  .listings-grid > .listing-card {
+    height: auto;
+    width: 100%;
+  }
+
+.listing-card:hover, .listing-card:focus {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
+  transform: translateY(-1.5px) scale(1.011);
+  text-decoration: none;
+}
+
+.listing-image-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  display: block;
+  background: #f7f7f7;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  flex-shrink: 0;
+  height: auto;
+}
+
+.listing-image {
+  inset: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.listing-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 16px 12px 10px 12px;
+}
+
+.listing-title {
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: #202023;
+  margin-bottom: 4px;
+  line-height: 1.18;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listing-location {
+  color: #4b5563;
+  font-size: 0.97rem;
+  font-weight: 400;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  line-height: 1.09;
+}
+
+.listing-meta {
+  font-size: 0.97rem;
+  color: #222;
+  font-weight: 500;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.12;
+  width: 100%;
+  margin-top: 1px;
+}
+
+.listing-meta span {
+  color: #495057;
+  font-size: 0.92rem;
+  font-weight: 400;
+  white-space: nowrap;
+}

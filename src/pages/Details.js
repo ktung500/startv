@@ -26,6 +26,10 @@ const Details = () => {
   const [reservations, setReservations] = useState([]);
   const [ownerProfile, setOwnerProfile] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Carousel state for listing images
+  const [carouselImages, setCarouselImages] = useState([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   const isDateBooked = (date) => {
     return reservations.some(reservation => {
@@ -50,7 +54,7 @@ const Details = () => {
         setLoading(false);
       }
     };
-
+  
     const fetchReservations = async () => {
       try {
         const response = await fetch(`http://localhost:5000/reservations/property/${id}`);
@@ -63,9 +67,43 @@ const Details = () => {
         console.error("Error fetching reservations:", err);
       }
     };
-
+  
+    // Fetch images from Supabase 'listing_images'
+    const fetchListingImages = async () => {
+      // First, fetch **all** rows and log them for inspection
+      // Only keep the filtered query and remove debugging logs
+      const { data, error } = await supabase
+        .from('listing_images')
+        .select('image_url, listing_id')
+        .eq('listing_id', id)
+        .order('id', { ascending: true });
+  
+      if (!error && data && data.length) {
+        // Debug log: the raw DB query result for this listing
+        console.log("Fetched property images (from listing_images table):", data);
+  
+        // Map each image_url (storage path) to its public URL for the carousel
+        const urls = data.map(img => {
+          if (img.image_url.startsWith('http')) return img.image_url;
+          const { publicUrl } = supabase
+            .storage
+            .from('listing-images')
+            .getPublicUrl(img.image_url);
+          return publicUrl;
+        });
+        // Debug log: what we end up using as image URLs
+        console.log("Resolved public image URLs:", urls);
+  
+        setCarouselImages(urls);
+        setCarouselIndex(0);
+      } else {
+        setCarouselImages([]);
+      }
+    };
+  
     fetchListing();
     fetchReservations();
+    fetchListingImages();
   }, [id]);
 
   // Fetch the owner's profile from Supabase if there's a listing and owner_id
@@ -175,15 +213,162 @@ const Details = () => {
   return (
     <MantineProvider>
       <div className="details-container">
-        <button className="back-button" onClick={() => navigate('/')}>
-          ← Back to Listings
-        </button>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 10
+        }}>
+          <button
+            className="back-button"
+            style={{
+              background: "#2884e4",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              padding: "10px 20px",
+              fontWeight: 600,
+              fontSize: 16,
+              cursor: "pointer",
+              boxShadow: "0 2px 7px #0001"
+            }}
+            onClick={() => navigate('/')}
+          >
+            ← Back to Listings
+          </button>
+          {user && listing && user.id === listing.owner && (
+            <button
+              className="edit-details-btn"
+              style={{
+                background: "#2884e4",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "10px 20px",
+                fontWeight: 600,
+                fontSize: 16,
+                cursor: "pointer",
+                boxShadow: "0 2px 7px #0001"
+              }}
+              onClick={() => navigate(`/listing/edit/${listing.id}`)}
+            >
+              Edit Details
+            </button>
+          )}
+        </div>
 
-        <img 
-          src={listing.image || 'https://placehold.co/600x400'} 
-          alt={listing.short_description} 
-          className="listing-detail-image"
-        />
+        {/* Listing Images Carousel */}
+        <div style={{ position: "relative", marginBottom: 24, textAlign: "center" }}>
+          {carouselImages.length ? (
+            <div style={{ width: "100%", aspectRatio: "2 / 1", position: "relative", overflow: "hidden", margin: "0 auto" }}>
+              <div style={{ display: "flex", width: "100%", height: "100%" }}>
+                {/* Show two images at a time in the 2:1 area */}
+                <img
+                  src={carouselImages[carouselIndex]}
+                  alt={`Property Listing Image ${carouselIndex + 1}`}
+                  style={{
+                    objectFit: "cover",
+                    width: "50%",
+                    height: "100%",
+                    aspectRatio: "1/1",
+                    borderRight: carouselImages.length > 1 ? "2px solid #eee" : "none"
+                  }}
+                  className="listing-detail-image"
+                />
+                <img
+                  src={carouselImages[(carouselIndex + 1) % carouselImages.length]}
+                  alt={`Property Listing Image ${(carouselIndex + 2) > carouselImages.length ? 1 : carouselIndex + 2}`}
+                  style={{
+                    objectFit: "cover",
+                    width: "50%",
+                    height: "100%",
+                    aspectRatio: "1/1"
+                  }}
+                  className="listing-detail-image"
+                />
+
+                {/* Carousel Controls */}
+                {carouselImages.length > 2 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setCarouselIndex((prev) => (prev - 2 + carouselImages.length) % carouselImages.length)}
+                      aria-label="Previous images"
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "#d8d8d8",
+                        fontSize: 72,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        zIndex: 10,
+                        width: 80,
+                        height: 120,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "color 0.18s"
+                      }}
+                    >
+                      ❮
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCarouselIndex((prev) => (prev + 2) % carouselImages.length)}
+                      aria-label="Next images"
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "#d8d8d8",
+                        fontSize: 72,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        zIndex: 10,
+                        width: 80,
+                        height: 120,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "color 0.18s"
+                      }}
+                    >
+                      ❯
+                    </button>
+                  </>
+                )}
+              </div>
+              {carouselImages.length > 2 && (
+                <div style={{
+                  position: "absolute",
+                  bottom: 10,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  display: "flex", gap: 8,
+                  pointerEvents: "none"
+                }}>
+                  <span style={{ lineHeight: "36px", color: "#888", fontSize: 15, background: "rgba(255,255,255,0.8)", borderRadius: 10, padding: "2px 12px" }}>
+                    {((carouselIndex) % carouselImages.length) + 1} & {((carouselIndex + 1) % carouselImages.length) + 1} / {carouselImages.length}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <img
+              src={listing.image || 'https://placehold.co/600x400'}
+              alt={listing.short_description}
+              className="listing-detail-image"
+            />
+          )}
+        </div>
         
         <div className="listing-info">
           <h1>{listing.short_description}</h1>

@@ -62,7 +62,7 @@ function Header() {
               to="/myListings"
               className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
             >
-              Manage Listings
+              My Listings
             </NavLink>
             
             {loading ? (
