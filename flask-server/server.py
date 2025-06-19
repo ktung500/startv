@@ -669,6 +669,40 @@ def get_a_reservation(reservation_id):
         
     except Exception as e:
         print(f"Error fetching user reservations: {str(e)}")
+@app.route('/reservations/<reservation_id>', methods=['PATCH'])
+@auth_required
+def patch_reservation(reservation_id):
+    try:
+        user_id = request.user.id
+        data = request.get_json()
+        if "confirmed" not in data:
+            return jsonify({"error": "Missing 'confirmed' in request body"}), 400
+
+        # First, fetch the reservation to check listing ownership
+        reservation_resp = supabase.table('reservations').select('listing').eq('reservation_id', reservation_id).single().execute()
+        if hasattr(reservation_resp, 'error') and reservation_resp.error:
+            return jsonify({"error": reservation_resp.error.message}), 400
+        reservation = reservation_resp.data
+        if reservation is None or 'listing' not in reservation:
+            return jsonify({"error": "Reservation/listing not found"}), 404
+
+        # Fetch listing to check owner
+        listing_resp = supabase.table('listings').select('owner').eq('id', reservation['listing']).single().execute()
+        if hasattr(listing_resp, 'error') and listing_resp.error:
+            return jsonify({"error": listing_resp.error.message}), 400
+        listing = listing_resp.data
+        if not listing or 'owner' not in listing or listing['owner'] != user_id:
+            return jsonify({"error": "Forbidden: only property owner can confirm"}), 403
+
+        # Update reservation to confirmed
+        update_resp = supabase.table('reservations').update({'confirmed': True}).eq('reservation_id', reservation_id).execute()
+        if hasattr(update_resp, 'error') and update_resp.error:
+            return jsonify({"error": update_resp.error.message}), 400
+
+        return jsonify({"reservation": update_resp.data}), 200
+    except Exception as e:
+        print(f"Error confirming reservation: {str(e)}")
+        return jsonify({"error": str(e)}), 500
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
