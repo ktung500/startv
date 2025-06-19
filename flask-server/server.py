@@ -51,7 +51,7 @@ def home():
 def get_listing_access(listing_id):
     try:
         # Query listing_access table for given listing and join with profiles
-        response = supabase.table('listing_access').select('*, profiles:user(username)').eq('listing', listing_id).execute()
+        response = supabase.table('listing_access').select('*, profiles:user(full_name,email)').eq('listing', listing_id).execute()
         if hasattr(response, 'error') and response.error:
             return jsonify({"error": response.error.message}), 400
 
@@ -60,12 +60,62 @@ def get_listing_access(listing_id):
             if record.get('profiles'):
                 access_records.append({
                     "user_id": record.get('user'),
-                    "username": record['profiles'].get('username'),
+                    "full_name": record['profiles'].get('full_name'),
+                    "email": record['profiles'].get('email'),
                     "access_tier": record.get('access_tier')
                 })
         return jsonify({"authorized": access_records}), 200
     except Exception as e:
         print(f"Error fetching listing access: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+# Invite a guest to a listing
+@app.route('/listing_access/invite', methods=['POST'])
+@auth_required
+def invite_guest():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        tier = data.get('tier')
+        listing_id = data.get('listing_id')
+        host_user = request.user
+
+        # Validate input
+        if not email or not tier or not listing_id:
+            return jsonify({"error": "Email, tier, and listing_id are required"}), 400
+
+        # Check if current user is the owner of the listing
+        listing_resp = supabase.table('listings').select('*').eq('id', listing_id).execute()
+        if not listing_resp.data:
+            return jsonify({"error": "Listing not found"}), 404
+
+        listing = listing_resp.data[0]
+        if listing.get('owner') != host_user.id:
+            return jsonify({"error": "You are not the owner of this listing"}), 403
+
+        # Look up user by email in profiles table (public, now with email field)
+        user_resp = supabase.table('profiles').select('id').eq('email', email).execute()
+        if not user_resp.data:
+            return jsonify({"error": "User with provided email not found in profiles"}), 404
+        invitee_id = user_resp.data[0]['id']
+
+        # Check for duplicate invitation
+        already_invited = supabase.table('listing_access').select('id').eq('user', invitee_id).eq('listing', listing_id).execute()
+        if already_invited.data and len(already_invited.data) > 0:
+            return jsonify({"error": "This user already has access"}), 400
+
+        # Insert access record
+        insert_resp = supabase.table('listing_access').insert({
+            "user": invitee_id,
+            "listing": listing_id,
+            "access_tier": tier
+        }).execute()
+
+        if hasattr(insert_resp, 'error') and insert_resp.error:
+            return jsonify({"error": insert_resp.error.message}), 400
+
+        return jsonify({"message": "Guest invited successfully"}), 201
+    except Exception as e:
+        print(f"Error inviting guest: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 # Example: Fetch all users from Supabase
